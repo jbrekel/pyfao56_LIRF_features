@@ -372,9 +372,15 @@ class Model:
                     (io.Kcbmid-io.Kcbini),0.001,io.h])
         if io.updh > 0: io.h = io.updh
 
+        #Root depth of previous time step (Zr_prev, m)
+        io.Zr_prev = io.Zr
         #Root depth (Zr, m) - FAO-56 page 279
         io.Zr = max([io.Zrini + (io.Zrmax-io.Zrini)*(io.Kcb-io.Kcbini)/
                      (io.Kcbmid-io.Kcbini),0.001,io.Zr])
+        #Change in root depth from previous time step (Zr_delta, m)
+        io.Zr_delta = io.Zr - io.Zr_prev
+        #Depth of soil between root zone and max root zone (Zb, m)
+        io.Zb = io.Zrmax - io.Zr
 
         #Upper limit crop coefficient (Kcmax) - FAO-56 Eq. 72
         u2 = io.wndsp * (4.87/math.log(67.8*io.wndht-5.42))
@@ -463,16 +469,39 @@ class Model:
         #Adjusted crop transpiration (T, mm)
         io.T = (io.Ks * io.Kcb) * io.ETref
 
-        #Deep percolation (DP, mm) - FAO-56 Eq. 88
-        io.DP = max([io.rain-runoff+io.idep-io.ETcadj-io.Dr,0.0])
+        if io.solmthd == 'D':
+            #Deep percolation (DP, mm) - FAO-56 Eq. 88
+            io.DP = max([io.rain - runoff + io.idep - io.ETcadj - io.Dr,
+                         0.0])
 
-        #Root zone soil water depletion (Dr, mm) - FAO-56 Eqs. 85 & 86
-        Dr = io.Dr - (io.rain - runoff) - io.idep + io.ETcadj + io.DP
-        io.Dr = sorted([0.0, Dr, io.TAW])[1]
+            #Root zone soil water depletion (Dr, mm) - FAO-56 Eqs. 85 & 86
+            Dr = io.Dr - (io.rain - runoff) - io.idep + io.ETcadj + io.DP
+            io.Dr = sorted([0.0, Dr, io.TAW])[1]
 
-        #Soil water depletion at max root depth (Drmax, mm)
-        Drmax= io.Drmax - (io.rain-runoff) - io.idep + io.ETcadj + io.DP
-        io.Drmax = sorted([0.0, Drmax, io.TAWrmax])[1]
+            #Soil water depletion at max root depth (Drmax, mm)
+            # Drmax = io.Drmax - (io.rain - runoff) - io.idep + io.ETcadj + io.DP
+            # io.Drmax = sorted([0.0, Drmax, io.TAWrmax])[1]
+            io.Drmax = -999
+
+        elif io.solmthd == 'L':
+            # Deep percolation (DP, mm) - FAO-56 Eq. 88
+            io.DP = max([io.rain - runoff + io.idep - io.ETcadj -
+                         io.Drmax, 0.0])
+
+            #Deficit in the change of root zone (D_deltaZr, mm)
+            if round((io.Drmax - io.Dr), 3) > 0:
+                io.D_deltaZr = (io.Zr_delta * 1000) * ((io.Drmax - io.Dr)/(io.Zb * 1000))
+            else:
+                io.D_deltaZr = 0.
+
+            # Root zone soil water depletion (Dr, mm)
+            Dr = io.Dr - (io.rain - runoff) - io.idep + io.ETcadj + io.D_deltaZr
+            io.Dr = sorted([0.0, Dr, io.TAW])[1]
+
+
+            #Soil water depletion at max root depth (Drmax, mm)
+            Drmax = io.Drmax - (io.rain - runoff) - io.idep + io.ETcadj + io.DP
+            io.Drmax = sorted([0.0, Drmax, io.TAWrmax])[1]
 
         #Root zone soil water depletion fraction (fDr, mm/mm)
         io.fDr = (1.0-((io.TAW - io.Dr)/io.TAW))
