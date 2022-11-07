@@ -19,7 +19,7 @@ class SoilWaterDeficit:
     Attributes
     ----------
     swddata : DataFrame
-        Soil water deficit data as float
+        Fractional soil water deficit data as float
         index = Bottom depth of the soil profile layer as integer (cm)
         columns = measurement date in string 'YYYY-DOY' format
 
@@ -135,7 +135,9 @@ class SoilWaterDeficit:
         cnames = list(self.swddata.columns)
         for cname in cnames:
             if cname != 'thetaFC':
-                self.swddata[cname] = self.swddata['thetaFC'] - self.swddata[cname]
+                self.swddata[cname] = (self.swddata['thetaFC'] - self.swddata[cname]).clip(lower=0)
+        col_order = cnames[-1:] + cnames[:-2]
+        self.swddata = self.swddata[col_order]
 
     def customload(self):
         """Override this function to customize loading soil water
