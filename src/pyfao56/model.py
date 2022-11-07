@@ -500,7 +500,7 @@ class Model:
 
 
             #Soil water depletion at max root depth (Drmax, mm)
-            Drmax = io.Drmax - (io.rain - runoff) - io.idep + io.ETcadj + io.DP
+            Drmax = io.Drmax - (io.rain - runoff) - io.idep + io.ETcadj
             io.Drmax = sorted([0.0, Drmax, io.TAWrmax])[1]
 
         #Root zone soil water depletion fraction (fDr, mm/mm)
