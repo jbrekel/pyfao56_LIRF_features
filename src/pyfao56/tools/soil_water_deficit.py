@@ -20,20 +20,36 @@ class SoilWaterDeficit:
     ----------
     swddata : DataFrame
         Fractional soil water deficit data as float
-        index = Bottom depth of the soil profile layer as integer (cm)
-        columns = measurement date in string 'YYYY-DOY' format
+        index - Bottom depth of the soil profile layer as integer (cm)
+        columns - string measurement date in 'YYYY-DOY' format
+    rzdata  : DataFrame
+        Soil water deficit (mm) data as float
+        index - string measurement date in 'YYYY-DOY' format
+        columns - ['Year', 'DOY', 'Zr', 'SWDr', 'SWDrmax']
+            Year    - 4-digit year (yyyy)
+            DOY     - Day of year  (ddd)
+            Zr      - Root depth (m), FAO-56 page 279
+            SWDr    - Measured soil water deficit(mm) for root depth
+            SWDrmax - Measured soil water deficit(mm) for max root depth
 
     Methods
     -------
     savefile(filepath='tools_pyfao56.swd')
-        Save the soil water deficit data to a file.
+        Save the soil water deficit data (i.e. the swddata class
+        attribute) to a file.
     loadfile(filepath='tools_pyfao56.swd')
-        Load soil water deficit data from a file.
+        Load soil water deficit data (i.e. the swddata class attribute)
+        from a file.
+    customload()
+        Override this function to customize loading soil water deficit
+        data.
     compute_swd_from_swc(swc, sol)
         Compute observed soil water deficit from SoilWaterContent and
-        SoilProfile classes.
-    customload()
-        Override this function to customize loading soil data.
+        SoilProfile classes. Populates swddata class attribute.
+    compute_root_zone_swd(mdl)
+        Compute observed soil water deficit in the active root zone and
+        in the maximum root zone, based on pyfao56 Model root estimates.
+        Populates rzdata class attribute.
     """
 
     def __init__(self, filepath=None):
@@ -47,6 +63,7 @@ class SoilWaterDeficit:
             Any valid filepath string (default = None).
         """
         self.swddata = pd.DataFrame()
+        self.rzdata = None
 
         if filepath is not None:
             self.loadfile(filepath)
@@ -60,7 +77,7 @@ class SoilWaterDeficit:
         ast ='*'*72
         s = ('{:s}\n'
              'pyfao56: FAO-56 Evapotranspiration in Python\n'
-             'Tools: Soil Water Deficit Data\n'
+             'Tools: Fractional Soil Water Deficit Data by Layer\n'
              '{:s}\n'
              'Depth').format(ast,ast)
         for cname in list(self.swddata):
@@ -127,8 +144,24 @@ class SoilWaterDeficit:
                     data.append(float(line[i]))
                 self.swddata.loc[depth] = data
 
+    def customload(self):
+        """Override this function to customize loading soil water
+        deficit data."""
+
+        pass
+
     def compute_swd_from_swc(self, swc, sol):
-        """informative docstring"""
+        """Compute observed soil water deficit (for each soil layer)
+        from SoilWaterContent and SoilProfile classes. Populates swddata
+        class attribute.
+
+        Parameters
+        ----------
+        swc : pyfao56-Tools SoilWaterContent class object
+            Provides soil water content observations.
+        sol : pyfao56 SoilProfile class object
+            Provides field capacity values for each soil layer.
+        """
 
         self.swddata = swc.swcdata
         self.swddata['thetaFC'] = sol.sdata['thetaFC'].copy()
@@ -136,11 +169,74 @@ class SoilWaterDeficit:
         for cname in cnames:
             if cname != 'thetaFC':
                 self.swddata[cname] = (self.swddata['thetaFC'] - self.swddata[cname]).clip(lower=0)
-        col_order = cnames[-1:] + cnames[:-2]
-        self.swddata = self.swddata[col_order]
+        self.swddata.drop('thetaFC', axis=1, inplace=True)
 
-    def customload(self):
-        """Override this function to customize loading soil water
-        deficit data."""
+    def compute_root_zone_swd(self, mdl=None):
+        """Compute observed soil water deficit in the active root zone
+        and in the maximum root zone, based on pyfao56 Model root
+        estimates. Populates rzdata class attribute.
 
-        pass
+        Parameters
+        ----------
+        mdl : pyfao56 Model class object
+            Provides the root depth estimates used to calculate SWDr and
+            SWDrmax.
+        """
+
+        # Make swddata into a dictionary to easily store/access values
+        swd_dict = self.swddata.to_dict()
+        # Make swddata column names (measurement dates) into list
+        dates = list(swd_dict.keys())
+        # Get lists of years and days of measurements
+        years = []
+        days  = []
+        for i in dates:
+            deconstructed_date = i.split('-')
+            years += [deconstructed_date[0]]
+            days  += [deconstructed_date[1]]
+
+        # Make initial dataframe
+        date_info = {'Year-DOY': dates, 'Year': years, 'DOY': days}
+        rzdata = pd.DataFrame.from_dict(date_info)
+        rzdata = rzdata.set_index('Year-DOY')
+
+        # Making Dataframe from Zr column of mdl.odata
+        root_estimates = mdl.odata[['Zr']].copy()
+
+        # Merging Zr column to the initial dataframe on measurement days
+        rzdata = rzdata.merge(root_estimates, left_index=True, right_index=True)
+
+        # Setting variable for max root zone in CM
+        rmax = mdl.par.Zrmax * 100 #cm
+
+        # Loop through swd_dict to find SWD values
+        SWDr = {}
+        SWDrmax = {}
+        for mykey, dictionary in swd_dict.items():
+            # Finding root depth(cm) on measurement days
+            try:
+                Zr = round(rzdata.loc[mykey, 'Zr'] * 100) #cm
+            except KeyError:
+                pass
+            # Setting variables for Dr and Drmax on measurement days
+            Dr = 0.
+            Drmax = 0.
+            # Iterate down to max root depth in 1 cm increments
+            for cm_inc in list(range(1, int(rmax + 1))):
+                # Find layer that contains cm_inc
+                lyr = [dpth for (idx, dpth) in enumerate(list(dictionary.keys())) if cm_inc <= dpth][0]
+                # Calculate SWD(mm) in the measurement day root depth
+                if cm_inc <= Zr:
+                    Dr += dictionary[lyr] * 10 #mm
+                # Calculate measured SWD(mm) in the max root depth
+                Drmax += dictionary[lyr] * 10 #mm
+            # Add SWD values to dictionaries with measurement day as key
+            SWDr[mykey] = Dr
+            SWDrmax[mykey] = Drmax
+
+        # Add SWD dictionaries to rzdata as columns
+        rzdata['SWDr'] = pd.Series(SWDr)
+        rzdata['SWDrmax'] = pd.Series(SWDrmax)
+
+        # Populate rzdata class attribute
+        self.rzdata = rzdata

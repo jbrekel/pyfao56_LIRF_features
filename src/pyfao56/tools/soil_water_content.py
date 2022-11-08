@@ -20,8 +20,8 @@ class SoilWaterContent:
     ----------
     swcdata : DataFrame
         Soil water content data as float
-        index = Bottom depth of the soil profile layer as integer (cm)
-        columns = measurement date in string 'YYYY-DOY' format
+        index - Bottom depth of the soil profile layer as integer (cm)
+        columns - measurement date in string 'YYYY-DOY' format
 
     Methods
     -------
@@ -30,7 +30,8 @@ class SoilWaterContent:
     loadfile(filepath='tools_pyfao56.smc')
         Load soil water content data from a file.
     customload()
-        Override this function to customize loading soil data.
+        Override this function to customize loading soil water content
+        data.
     """
 
     def __init__(self, filepath=None):
@@ -57,7 +58,7 @@ class SoilWaterContent:
         ast ='*'*72
         s = ('{:s}\n'
              'pyfao56: FAO-56 Evapotranspiration in Python\n'
-             'Tools: Soil Water Content Data\n'
+             'Tools: Fractional Soil Water Content Data by Layer\n'
              '{:s}\n'
              'Depth').format(ast,ast)
         for cname in list(self.swcdata):
