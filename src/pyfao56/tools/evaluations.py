@@ -16,32 +16,81 @@ import seaborn as sns
 
 
 class Visualize:
-    """A class for visualizing pyfao56 Model output
+    """A class for visualizing pyfao56 Model output.
 
     Attributes
     ----------
     mdl : pyfao56 Model class
-        Provides data to evaluate.
+        Provides data to visualize.
     edata : Dataframe
         All of the data to be evaluated.
-    swd : pyfao56 Tools SoilWaterDeficit class, optional
+    swd : pyfao56-Tools SoilWaterDeficit class, optional
         Provides observed soil water deficit data to evaluate
         (default = None)
 
     Methods
     -------
+    plot_Dr(drmax=False, raw=False, water_events=False, ks=False,
+            title=None, save=None, show=True)
+        Create a plot of Modeled soil water depletion
+    plot_ET(rET=True, etc=True, etcadj=True, water_events=False,
+            title=None, save=None, show=True)
+        Create a plot of Modeled evapotranspiration
     """
 
     def __init__(self, mdl, swd=None):
-        """super informative docstring"""
+        """Initialize the Visualize class attributes.
+
+        Parameters
+        ----------
+        mdl : pyfao56 Model object
+            Provides the modeled data to be visualized
+        swd : pyfao56-Tools SoilWaterDeficit object, optional
+            Provides observed soil water deficit data to visualize
+            (default = None)
+        """
 
         self.mdl = mdl
         self.swd = swd
-        self.edata = mdl.odata.loc[:, ~mdl.odata.columns.duplicated()].copy()
+        self.edata = \
+            mdl.odata.loc[:, ~mdl.odata.columns.duplicated()].copy()
 
-    def plot_Dr(self, raw=False, water_events=False, ks=False,
-                title=None, save=None, show=True):
-        """informative docstring"""
+    def plot_Dr(self, drmax=False, raw=False, water_events=False,
+                ks=False, title=None, save=None, show=True):
+        """Plot soil water depletion (Dr), with water amount (mm/day) on
+           the y-axis, and day of year (DOY) on the x-axis.
+
+        Parameters
+        ----------
+        drmax : boolean, optional
+            If False, max root depth depletion (Drmax) is not plotted;
+            if True, figure includes a lineplot of Drmax
+            (default = False)
+        raw : boolean, optional
+            If False, Readily Available Water (RAW) is not plotted; if
+            True, figure includes a lineplot of RAW
+            (default = False)
+        water_events : boolean, optional
+            If False, irrigation and rainfall are not plotted; if True,
+            figure includes a scatter plot of irrigation and rainfall
+            (default = False)
+        ks : boolean, optional
+            If False, the stress coefficient (Ks) is not plotted; if
+            True, figure includes a Ks lineplot.
+            (default = False)
+        title : str, optional
+            If None, the figure title is "pyfao56 Soil Water Depletion".
+            Change the title by providing a string here.
+            (default = None)
+        save : str, optional
+            If None, the figure is not saved. To save, provide a string
+            of the filepath where the figure should be saved.
+            (default = None)
+        show : boolean, optional
+            If True, the plot is displayed before the method moves on;
+            if False, the plot is not displayed.
+            (default = True)
+        """
 
         # Creating variables for info that is used or changed often
         edata     = self.edata
@@ -67,8 +116,8 @@ class Visualize:
 
         # Creating figure:
         fig, ax = plt.subplots()
-        fig.set_figheight(10)
-        fig.set_figwidth(20)
+        fig.set_figheight(8)
+        fig.set_figwidth(16)
 
         # Setting axis labels:
         ax.set(xlabel=x_l, ylabel=y_l)
@@ -95,8 +144,8 @@ class Visualize:
         sns.lineplot(data=edata, x=x, y='Dr',
                      color=dr_c, label='Modeled '+dr_l)
 
-        # Making Drmax lineplot if available
-        if self.mdl.sol is not None:
+        # Making Drmax lineplot if requested
+        if drmax:
             sns.lineplot(data=edata, x=x, y='Drmax',
                          color=drmax_c, label='Modeled '+drmax_l)
 
@@ -105,7 +154,7 @@ class Visualize:
             sns.scatterplot(data=swddata, x=x, y='SWDr',
                             color=dr_c, marker='s', s=50,
                             label='Measured '+drmax_l)
-            if self.mdl.sol is not None:
+            if drmax:
                 sns.scatterplot(data=swddata, x=x, y='SWDrmax',
                                 color=drmax_c, marker='s', s=50,
                                 label='Measured '+drmax_l)
@@ -150,9 +199,42 @@ class Visualize:
         else:
             plt.close(fig)
 
-    def plot_ET(self, water_events=False,
-                title=None, save=None, show=True):
-        """informative docstring"""
+    def plot_ET(self, rET=True, etc=True, etcadj=True,
+                water_events=False, title=None, save=None, show=True):
+        """Plot evapotranspiration (ET), with water amount (mm/day) on
+           the y-axis, and day of year (DOY) on the x-axis.
+
+        Parameters
+        ----------
+        rET : boolean, optional
+            If True, the figure includes a lineplot for reference ET; if
+            False, the figure does not include reference ET
+            (default = True)
+        etc : boolean, optional
+            If True, the figure includes a lineplot for crop ET; if
+            False, the figure does not include crop ET
+            (default = True)
+        etcadj : boolean, optional
+            If True, the figure includes a lineplot for adjusted crop
+            ET; if False, the figure does not include adjusted crop ET
+            (default = True)
+        water_events : boolean, optional
+            If False, irrigation and rainfall are not plotted; if True,
+            figure includes a scatter plot of irrigation and rainfall
+            (default = False)
+        title : str, optional
+            If None, the figure title is "pyfao56 Soil Water Depletion".
+            Change the title by providing a string here.
+            (default = None)
+        save : str, optional
+            If None, the figure is not saved. To save, provide a string
+            of the filepath where the figure should be saved.
+            (default = None)
+        show : boolean, optional
+            If True, the plot is displayed before the method moves on;
+            if False, the plot is not displayed.
+            (default = True)
+            """
 
         # Creating variables for info that is used or changed often
         edata     = self.edata
@@ -162,20 +244,20 @@ class Visualize:
         x_l       = 'Day of Year (DOY)'
         y_l       = 'Water Amount (mm/day)'
         # y2_l      = 'Ks (FAO-56 stress coefficient)'
-        etr_l     = 'Reference ET'
+        rET_l     = 'Reference ET'
         etc_l     = 'Crop ET'
         etcadj_l  = 'Adjusted Crop ET'
         # Colors
         bg_c      = 'whitesmoke'
-        etr_c     = 'darkmagenta'
+        rET_c     = 'darkmagenta'
         etc_c     = 'firebrick'
         etcadj_c  = 'plum'
         water_c   = 'navy'
 
         # Creating figure:
         fig, ax = plt.subplots()
-        fig.set_figheight(10)
-        fig.set_figwidth(20)
+        fig.set_figheight(8)
+        fig.set_figwidth(16)
 
         # Setting axis labels:
         ax.set(xlabel=x_l, ylabel=y_l)
@@ -187,11 +269,10 @@ class Visualize:
         x_tick_start = -1 * (start_doy % 5)
         ax.set_xticks(range(x_tick_start, start_doy, 5))
         # y axis:
-        etr_max = round(self.edata['ETref'].max())
-        etr_max += (etr_max % 5)
-        ax.set_ylim(0, etr_max)
-        ax.set_yticks(range(0, etr_max, 2))
-        # ax.set_yticks([x * 2.5 for x in range(0, (int(etr_max/2)))])
+        rET_max = round(self.edata['ETref'].max())
+        rET_max += rET_max % 5
+        ax.set_ylim(0, rET_max)
+        ax.set_yticks(range(0, rET_max, 2))
 
         # Changing the background color of the plot
         ax.set_facecolor(bg_c)
@@ -199,20 +280,27 @@ class Visualize:
         # Adding gridlines to the plot
         ax.grid(ls=":")
 
-        # Making ETr lineplot
-        sns.lineplot(data=edata, x=x, y='ETref',
-                     color=etr_c, label='Modeled '+etr_l)
+        # Making ETr lineplot if requested
+        if rET:
+            sns.lineplot(data=edata, x=x, y='ETref',
+                         color=rET_c, label='Modeled '+rET_l)
 
-        # Making ETc lineplot
-        sns.lineplot(data=edata, x=x, y='ETc',
-                     color=etc_c, label='Modeled '+etc_l)
+        # Making ETc lineplot if requested
+        if etc:
+            sns.lineplot(data=edata, x=x, y='ETc',
+                         color=etc_c, label='Modeled '+etc_l)
 
-        # Making ETcadj lineplot
-        sns.lineplot(data=edata, x=x, y='ETcadj',
-                     color=etcadj_c, label='Modeled '+etcadj_l)
+        # Making ETcadj lineplot if requested
+        if etcadj:
+            sns.lineplot(data=edata, x=x, y='ETcadj',
+                         color=etcadj_c, label='Modeled '+etcadj_l)
 
         # Adding water events if requested
         if water_events:
+            water_max = max([round(self.edata['Rain'].max()), round(self.edata['Irrig'].max())])
+            water_max += water_max % 5
+            ax.set_ylim(0, water_max)
+            ax.set_yticks(range(0, water_max, 2))
             sns.scatterplot(data=edata, x=x, y='Rain',
                             color=water_c, marker='+', s=75,
                             label='Rain')
