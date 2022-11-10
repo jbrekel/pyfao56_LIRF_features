@@ -163,17 +163,24 @@ class SoilWaterDeficit:
             Provides field capacity values for each soil layer.
         """
 
+        # Making a base dataframe out of swcdata
         self.swddata = swc.swcdata
+        # Copying Field Capacity info over to swddata dataframe
         self.swddata['thetaFC'] = sol.sdata['thetaFC'].copy()
+        # Creating a list of the column names in the swddata dataframe
         cnames = list(self.swddata.columns)
+        # Looping through column names; calculating SWD on date columns
         for cname in cnames:
             if cname != 'thetaFC':
-                self.swddata[cname] = (self.swddata['thetaFC'] - self.swddata[cname]).clip(lower=0)
+                # "Clip" sets negative SWD values to zero
+                self.swddata[cname] = (self.swddata['thetaFC'] - self.
+                                       swddata[cname]).clip(lower=0)
+        # Dropping the Field Capacity info from the dataframe (KIS)
         self.swddata.drop('thetaFC', axis=1, inplace=True)
 
     def compute_root_zone_swd(self, mdl=None):
         """Compute observed soil water deficit in the active root zone
-        and in the maximum root zone, based on pyfao56 Model root
+        and in the maximum root zone, based on pyfao56 Model root depth
         estimates. Populates rzdata class attribute.
 
         Parameters
@@ -183,11 +190,12 @@ class SoilWaterDeficit:
             SWDrmax.
         """
 
-        # Make swddata into a dictionary to easily store/access values
+        # ********************* Setting things up *********************
+        # Make swddata into a swdByLyr to easily store/access values
         swd_dict = self.swddata.to_dict()
-        # Make swddata column names (measurement dates) into list
+        # List of swddata column names (which are measurement dates)
         dates = list(swd_dict.keys())
-        # Get lists of years and days of measurements
+        # Get lists of years and days of measurements from dates list
         years = []
         days  = []
         for i in dates:
@@ -195,41 +203,51 @@ class SoilWaterDeficit:
             years += [deconstructed_date[0]]
             days  += [deconstructed_date[1]]
 
-        # Make initial dataframe
-        date_info = {'Year-DOY': dates, 'Year': years, 'DOY': days}
-        rzdata = pd.DataFrame.from_dict(date_info)
+        # Make initial dataframe out of the measurement date info
+        rzdata = pd.DataFrame({'Year-DOY': dates,
+                               'Year': years,
+                               'DOY': days})
+        # Set row index to be the same as pyfao56 Model output dataframe
         rzdata = rzdata.set_index('Year-DOY')
 
         # Making Dataframe from Zr column of mdl.odata
         root_estimates = mdl.odata[['Zr']].copy()
 
         # Merging Zr column to the initial dataframe on measurement days
-        rzdata = rzdata.merge(root_estimates, left_index=True, right_index=True)
+        rzdata = rzdata.merge(root_estimates, left_index=True,
+                              right_index=True)
 
-        # Setting variable for max root zone in CM
+        # Setting variable for max root zone in cm
         rmax = mdl.par.Zrmax * 100 #cm
 
-        # Loop through swd_dict to find SWD values
+        # ****************** Computing Root Zone SWD ******************
+        # Loop through swd_dict to compute SWD values
         SWDr = {}
         SWDrmax = {}
-        for mykey, dictionary in swd_dict.items():
+        for mykey, swdByLyr in swd_dict.items():
+            # Hint:
+            #          mykey is a column name of swddata ('YYYY-DOY')
+            #          swdByLyr is a dictionary. Keys: layer depths
+            #          Values: fractional SWD as measured on mykey day
             # Finding root depth(cm) on measurement days
             try:
-                Zr = round(rzdata.loc[mykey, 'Zr'] * 100) #cm
+                Zr = rzdata.loc[mykey, 'Zr'] * 100 #cm
             except KeyError:
                 pass
-            # Setting variables for Dr and Drmax on measurement days
+            # Setting temp variables for SWDr and SWDrmax on meas. days
             Dr = 0.
             Drmax = 0.
             # Iterate down to max root depth in 1 cm increments
             for cm_inc in list(range(1, int(rmax + 1))):
-                # Find layer that contains cm_inc
-                lyr = [dpth for (idx, dpth) in enumerate(list(dictionary.keys())) if cm_inc <= dpth][0]
-                # Calculate SWD(mm) in the measurement day root depth
+                # Find soil layer that contains the cm increment
+                lyr = [dpth for (idx, dpth)
+                       in enumerate(list(swdByLyr.keys()))
+                       if cm_inc <= dpth][0]
+                # Calculate SWD(mm) in the active root depth for the day
                 if cm_inc <= Zr:
-                    Dr += dictionary[lyr] * 10 #mm
+                    Dr += swdByLyr[lyr] * 10 #mm
                 # Calculate measured SWD(mm) in the max root depth
-                Drmax += dictionary[lyr] * 10 #mm
+                Drmax += swdByLyr[lyr] * 10 #mm
             # Add SWD values to dictionaries with measurement day as key
             SWDr[mykey] = Dr
             SWDrmax[mykey] = Drmax
