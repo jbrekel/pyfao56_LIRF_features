@@ -142,22 +142,22 @@ class Visualize:
 
         # Making Dr lineplot
         sns.lineplot(data=edata, x=x, y='Dr',
-                     color=dr_c, label='Modeled '+dr_l)
+                     color=dr_c, label=dr_l)
 
         # Making Drmax lineplot if requested
         if drmax:
             sns.lineplot(data=edata, x=x, y='Drmax',
-                         color=drmax_c, label='Modeled '+drmax_l)
+                         color=drmax_c, label=drmax_l)
 
         # Adding observed SWD if available:
         if self.swd is not None:
             sns.scatterplot(data=swddata, x=x, y='SWDr',
                             color=dr_c, marker='s', s=50,
-                            label='Measured '+drmax_l)
+                            label='Observed '+drmax_l)
             if drmax:
                 sns.scatterplot(data=swddata, x=x, y='SWDrmax',
                                 color=drmax_c, marker='s', s=50,
-                                label='Measured '+drmax_l)
+                                label='Observed '+drmax_l)
 
         # Adding RAW lineplot if requested
         if raw:
@@ -243,15 +243,17 @@ class Visualize:
         plt_title = 'pyfao56 Evapotranspiration (ET)'
         x_l       = 'Day of Year (DOY)'
         y_l       = 'Water Amount (mm/day)'
-        # y2_l      = 'Ks (FAO-56 stress coefficient)'
-        rET_l     = 'Reference ET'
-        etc_l     = 'Crop ET'
-        etcadj_l  = 'Adjusted Crop ET'
+        if self.mdl.wth.rfcrp == 'S':
+            rET_l = 'ETo'
+        elif self.mdl.wth.rfcrp == 'T':
+            rET_l = 'ETr'
+        etc_l     = 'ETc'
+        etcadj_l  = 'ETc_adj'
         # Colors
         bg_c      = 'whitesmoke'
-        rET_c     = 'darkmagenta'
-        etc_c     = 'firebrick'
-        etcadj_c  = 'plum'
+        rET_c     = 'maroon'
+        etc_c     = 'green'
+        etcadj_c  = 'steelblue'
         water_c   = 'navy'
 
         # Creating figure:
@@ -283,17 +285,17 @@ class Visualize:
         # Making ETr lineplot if requested
         if rET:
             sns.lineplot(data=edata, x=x, y='ETref',
-                         color=rET_c, label='Modeled '+rET_l)
+                         color=rET_c, label=rET_l)
 
         # Making ETc lineplot if requested
         if etc:
             sns.lineplot(data=edata, x=x, y='ETc',
-                         color=etc_c, label='Modeled '+etc_l)
+                         color=etc_c, label=etc_l)
 
         # Making ETcadj lineplot if requested
         if etcadj:
             sns.lineplot(data=edata, x=x, y='ETcadj',
-                         color=etcadj_c, label='Modeled '+etcadj_l)
+                         color=etcadj_c, label=etcadj_l)
 
         # Adding water events if requested
         if water_events:

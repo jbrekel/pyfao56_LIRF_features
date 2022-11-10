@@ -389,9 +389,12 @@ To quickly view a given Update class, use Python's print function: `print(upd)`
 
 A specific Update class instantiation can be saved for future use by writing the udata attribute to a properly formatted text file. That can be done easily via the savefile class method. To use the savefile method: `upd.savefile(FilePathForSavedFile.upd)`
 
-## LIRF Features (as of 11/7/2022)
-Below is detailed information about changes to pyfao56 that were made to incorporate features of the water balance spreadsheet that has been used at the USDA-ARS, WMSRU Limited Irrigation Research Farm (LIRF). The LIRF water balance spreadsheet has been used for over a decade. While originally closely based on FAO-56 methodology, incremental changes have been made to relax some assumptions of FAO-56. The changes are meant to give a more detailed look at the soil water balance. 
+## LIRF Features (as of 11/10/2022)
+Below is detailed information about changes to pyfao56 that were made to incorporate features of the water balance spreadsheet from the USDA-ARS, WMSRU Limited Irrigation Research Farm (LIRF). The LIRF water balance spreadsheet has been used for over a decade. While originally closely based on FAO-56 methodology, incremental changes have been made to relax some assumptions of FAO-56. The changes are meant to give a more detailed look at the soil water balance. 
 
+### Main Package Changes
+
+#### Model
 With LIRF features, the pyfao56 Model class can also be instantiated with (up to) three _**optional**_ arguments: 
  * First, users can choose to supply a pyfao56 **Update** class, which is meant to update the model state variables.
  * Additionally, users can choose to also supply a **SoilProfile** class, which causes the Model class to loosen some FAO-56 assumptions and calculate a water balance for stratified soil layers. 
@@ -423,11 +426,11 @@ The purpose of the SoilProfile class is to provide a way for users to force the 
         * Override this function to customize loading soil data.
     
 * ##### How to Use
-After importing the pyfao56 Python Package (`import pyfao56 as fao`), users can choose to instantiate a SoilProfile class: `sol = fao.SoilProfile()`
+After importing the pyfao56 Python Package (`import pyfao56 as fao`), users can choose to instantiate a SoilProfile class: `sol = fao.SoilProfile()` (note: as of writing, class instantiation is a little more complex than this because SoilWaterContent is not officially incorporated into pyfao56...in the meantime, it should be saved to the user's machine and then imported like any other local Python module)
 
 The main attribute of the SoilProfile class is the sdata data frame. As a row index, the sdata data frame uses the bottom of a soil layer in cm. In each row, the sdata data frame should contain field capacity, wilting point, and initial volumetric water content (cm^3/cm^3) data for the layer specified by the row index.
 
-Users who wish to use a text file to populate the SoilProfile class should follow the format of the example soil profile file provided [here](). Once the soil profile information has been added to the properly formatted text file, users can then load the file to the SoilProfile class: `sol.loadfile(MySoilProfileFilePath.sol)`
+Users who wish to use a text file to populate the SoilProfile class should follow the format of the example soil profile file provided [here](https://github.com/jbrekel/pyfao56_LIRF_features/blob/LIRF-main/tests/test5/sdata_into_model_input_files/sdata_into_model_SoilProfile.sol). Once the soil profile information has been added to the properly formatted text file, users can then load the file to the SoilProfile class: `sol.loadfile('MySoilProfileFilePath.sol')`
 
 Users who wish to populate the SoilProfile class in a more programmatic way should use Python class inheritance to create a "child" class to the SoilProfile class, and then override the `customload()` method of the SoilProfile class.
 
@@ -448,6 +451,123 @@ In the LIRF methodology, Dr is calculated from Dr of the previous day, rain, run
 
 The LIRF methodology is meant to give users additional information about the water content of soil layers beneath the active root zone, but within the final root zone for the crop. By assessing the difference between Drmax and Dr, the user should get an idea of how much water, in excess of Dr, can be added to the soil profile and still eventually be available to the crop. Moreover, the LIRF methodology uses Drmax to calculate deep percolation -- water is only lost if it moves past the maximum root depth.
 
+### SubPackage Changes - Tools
+The "Tools" directory includes two modules for managing observed soil water data, and a module for evaluating data used in the pyfao56 environment. 
+
+The two modules for managing observed data are:
+* soil_water_content.py (contains the SoilWaterContent class)
+* soil_water_deficit.py (contains the SoilWaterDeficit class)
+
+The module for evaluating pyfao56 data is:
+* evaluations.py (contains Visualize and Analyze classes)
+
+Each of the modules in Tools will be discussed more thoroughly below. Of course, users can choose which (if any) of the classes in Tools to use. Some users may choose to only utilize the evaluations module, while others choose to only use some of the data management capabilities in the other modules.
+
+#### SoilWaterContent
+The purpose of the SoilWaterContent class is to provide input and output tools for using volumetric soil water content data in the pyfao56 environment.
+
+* ##### Attributes
+  * swcdata : DataFrame
+    * Soil water content data as float
+    * index - Bottom depth of the soil profile layer as integer (cm)
+    * columns - measurement date in string 'YYYY-DOY' format
+    
+* ##### Methods
+    * savefile(filepath='tools_pyfao56.smc')
+        * Save the soil water content data to a file.
+    * loadfile(filepath='tools_pyfao56.smc')
+        * Load soil water content data from a file.
+    * customload()
+        * Override this function to customize loading soil water content
+        data.
+          
+* ##### How to Use
+Users should begin by importing the SoilWaterContent class: `swc = fao.tools.SoilWaterContent` (note: as of writing, class instantiation is a little more complex than this because SoilWaterContent is not officially incorporated into pyfao56...in the meantime, it should be saved to the user's machine and then imported like any other local Python module)
+
+The main attribute of the SoilWaterContent class is the swcdata data frame. The swcdata data frame uses the bottom of a soil layer, in cm, as the row index. For columns, the swcdata data frame uses the date of the observation in a string ('YYYY-DOY') format. The entries of the dataframes should be the volumetric water content observations (cm^3/cm^3) taken on the day indicated in the column name and for the layer indicated in the row index. 
+
+Like the other classes of pyfao56, there are multiple ways to load data into the swcdata class attribute. 
+
+Users who wish to use a text file to populate the SoilWaterContent class should follow the format of the example soil water content file provided [here](https://github.com/jbrekel/pyfao56_LIRF_features/blob/LIRF-main/tests/test6/E12_FF_2022.smc) (of course, users should change the row indices to match their assumed soil layer depths). Once the soil water content observations have been added to the properly formatted text file, users can then load the file to the SoilWaterContent class: `swc.loadfile('MySoilWaterContentFilePath.smc')`
+
+Users who wish to populate the swcdata attribute in a more programmatic fashion should use Python class inheritance to create a "child" class to the SoilWaterContent class, and then override the `customload()` method of the SoilWaterContent class. Keep in mind that "customloading" can be as simple as formatting the data properly in a spreadsheet, using Pandas to transfer the spreadsheet into a data frame, and then writing something like: 
+    
+    class swc_child(SoilWaterContent):
+        def customload(self, df):
+            self.swcdata = df
+ where 'df' is the variable of the data frame from the spreadsheet. 
+
+Once a SoilWaterContent class is populated with data, that data can then be saved: `swc.savefile('FilePathForSavedFile.smc')`, passed to a SoilWaterDeficit class to calculate observed soil water deficit (see below), or used for other purposes in Python.
+
+To quickly view a given SoilWaterContent class, use Python's print function: `print(swc)`
+
+#### SoilWaterDeficit
+The purpose of the SoilWaterDeficit class is to provide input and output tools for incorporating observed soil water deficit data into the pyfao56 environment. 
+
+* ##### Attributes
+    * swddata : DataFrame
+        * Fractional soil water deficit data as float
+        * index - Bottom depth of the soil profile layer as integer (cm)
+        * columns - string measurement date in 'YYYY-DOY' format
+    * rzdata  : DataFrame
+        * Soil water deficit (mm) data as float
+        * index - string measurement date in 'YYYY-DOY' format
+        * columns: 
+            * Year    - 4-digit year (yyyy)
+            * DOY     - Day of year  (ddd)
+            * Zr      - Root depth (m), FAO-56 page 279
+            * SWDr    - Measured soil water deficit(mm) for root depth
+            * SWDrmax - Measured soil water deficit(mm) for max root depth  
+    
+* ##### Methods
+    * savefile(filepath='tools_pyfao56.swd')
+        * Save the soil water deficit data (i.e. the swddata class
+        attribute) to a file.
+    * loadfile(filepath='tools_pyfao56.swd')
+        * Load soil water deficit data (i.e. the swddata class attribute)
+        from a file.
+    * customload()
+        * Override this function to customize loading soil water deficit
+        data.
+    * compute_swd_from_swc(swc, sol)
+        * Compute observed soil water deficit from SoilWaterContent and
+        SoilProfile classes. Populates swddata class attribute.
+    * compute_root_zone_swd(mdl)
+        * Compute observed soil water deficit in the active root zone and
+        in the maximum root zone, based on pyfao56 Model root estimates.
+        Populates rzdata class attribute.  
+          
+* ##### How to Use
+
+
+#### Evaluations
+The purpose of the Evaluations module is to streamline common visualizations and numerical analyses for pyfao56 users.  
+
+#### Evaluations - Visualize
+
+
+* ##### Attributes
+    * mdl : pyfao56 Model class
+        * Provides data to visualize.
+    * edata : Dataframe
+        * All of the data to be evaluated.
+    * swd : pyfao56-Tools SoilWaterDeficit class, optional
+        * Provides observed soil water deficit data to evaluate
+        (default = None)  
+          
+* ##### Methods
+    * plot_Dr(drmax=False, raw=False, water_events=False, ks=False,
+            title=None, save=None, show=True)
+        * Create a plot of Modeled soil water depletion
+    * plot_ET(rET=True, etc=True, etcadj=True, water_events=False,
+            title=None, save=None, show=True)
+        * Create a plot of Modeled evapotranspiration  
+    
+* ##### How to Use
+
+#### Evaluations - Analyze
+This class has not yet been made.
+
 ## Further examples
 Further example scripts for setting up and running the model are [here](https://github.com/kthorp/pyfao56/tree/main/tests).
 
@@ -460,6 +580,8 @@ Further example scripts for setting up and running the model are [here](https://
 [test4](https://github.com/kthorp/pyfao56/tree/main/tests/test4) - The cotton2018.py module contains code to setup and run pyfao56 for water-limited and well-watered treatments for a 2018 cotton field study at Maricopa, Arizona.
 
 [test 5](https://github.com/jbrekel/pyfao56_LIRF_features/tree/LIRF-main/tests/test5) - The sdata_into_model_testing.py and soil_profile_io_ex.py scripts are meant to test the introduction of the SoilProfile class and the LIRF-model methodology. Example output files can be found in the Example_Output directory. 
+
+[test 6](https://github.com/jbrekel/pyfao56_LIRF_features/tree/LIRF-main/tests/test6) - Contains files that were created from testing the Evaluations, SoilWaterContent, and SoilWaterDeficit modules.
 
 ## Further information
 The pyfao56 package was used to conduct the following research:
