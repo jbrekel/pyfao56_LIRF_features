@@ -29,8 +29,8 @@ class SoilWaterDeficit:
             Year    - 4-digit year (yyyy)
             DOY     - Day of year  (ddd)
             Zr      - Root depth (m), FAO-56 page 279
-            SWDr    - Measured soil water deficit(mm) for root depth
-            SWDrmax - Measured soil water deficit(mm) for max root depth
+            SWDr    - Observed soil water deficit(mm) for root depth
+            SWDrmax - Observed soil water deficit(mm) for max root depth
 
     Methods
     -------
@@ -175,7 +175,7 @@ class SoilWaterDeficit:
                 # "Clip" sets negative SWD values to zero
                 self.swddata[cname] = (self.swddata['thetaFC'] - self.
                                        swddata[cname]).clip(lower=0)
-        # Dropping the Field Capacity info from the dataframe (KIS)
+        # Dropping the Field Capacity info from the dataframe (K.I.S.)
         self.swddata.drop('thetaFC', axis=1, inplace=True)
 
     def compute_root_zone_swd(self, mdl=None):
@@ -191,7 +191,7 @@ class SoilWaterDeficit:
         """
 
         # ********************* Setting things up *********************
-        # Make swddata into a swdByLyr to easily store/access values
+        # Make swddata into a dictionary to easily store/access values
         swd_dict = self.swddata.to_dict()
         # List of swddata column names (which are measurement dates)
         dates = list(swd_dict.keys())
@@ -210,11 +210,8 @@ class SoilWaterDeficit:
         # Set row index to be the same as pyfao56 Model output dataframe
         rzdata = rzdata.set_index('Year-DOY')
 
-        # Making Dataframe from Zr column of mdl.odata
-        root_estimates = mdl.odata[['Zr']].copy()
-
         # Merging Zr column to the initial dataframe on measurement days
-        rzdata = rzdata.merge(root_estimates, left_index=True,
+        rzdata = rzdata.merge(mdl.odata[['Zr']], left_index=True,
                               right_index=True)
 
         # Setting variable for max root zone in cm
@@ -227,7 +224,7 @@ class SoilWaterDeficit:
         for mykey, swdByLyr in swd_dict.items():
             # Hint:
             #          mykey is a column name of swddata ('YYYY-DOY')
-            #          swdByLyr is a dictionary. Keys: layer depths
+            #          swdByLyr is a dictionary--Keys: layer depths
             #          Values: fractional SWD as measured on mykey day
             # Finding root depth(cm) on measurement days
             try:

@@ -108,7 +108,7 @@ class Model:
         Conduct the FAO-56 calculations from start to end
     """
 
-    def __init__(self,start, end, par, wth, irr, sol=None, upd=None,
+    def __init__(self, start, end, par, wth, irr, sol=None, upd=None,
                  cons_p=False):
         """Initialize the Model class attributes.
 
@@ -474,30 +474,28 @@ class Model:
             io.DP = max([io.rain - runoff + io.idep - io.ETcadj - io.Dr,
                          0.0])
 
-            #Root zone soil water depletion (Dr, mm) - FAO-56 Eqs. 85 & 86
-            Dr = io.Dr - (io.rain - runoff) - io.idep + io.ETcadj + io.DP
+            #Root zone soil water depletion (Dr,mm) - FAO-56 Eqs.85 & 86
+            Dr = io.Dr - (io.rain-runoff) - io.idep + io.ETcadj + io.DP
             io.Dr = sorted([0.0, Dr, io.TAW])[1]
 
-            #Soil water depletion at max root depth (Drmax, mm)
-            # Drmax = io.Drmax - (io.rain - runoff) - io.idep + io.ETcadj + io.DP
-            # io.Drmax = sorted([0.0, Drmax, io.TAWrmax])[1]
+            #Max root depth depletion (non-existent in FAO-56)
             io.Drmax = -999
 
         elif io.solmthd == 'L':
-            # Deep percolation (DP, mm) - FAO-56 Eq. 88
+            #Deep percolation (DP, mm) - FAO-56 Eq. 88 using Drmax
             io.DP = max([io.rain - runoff + io.idep - io.ETcadj -
                          io.Drmax, 0.0])
 
             #Deficit in the change of root zone (D_deltaZr, mm)
             if round((io.Drmax - io.Dr), 3) > 0:
-                io.D_deltaZr = (io.Zr_delta * 1000) * ((io.Drmax - io.Dr)/(io.Zb * 1000))
+                io.D_deltaZr = (io.Zr_delta * 1000) * (
+                                    (io.Drmax - io.Dr) / (io.Zb * 1000))
             else:
                 io.D_deltaZr = 0.
 
-            # Root zone soil water depletion (Dr, mm)
-            Dr = io.Dr - (io.rain - runoff) - io.idep + io.ETcadj + io.D_deltaZr
+            #Root zone soil water depletion (Dr, mm)
+            Dr = io.Dr-(io.rain-runoff)-io.idep+io.ETcadj + io.D_deltaZr
             io.Dr = sorted([0.0, Dr, io.TAW])[1]
-
 
             #Soil water depletion at max root depth (Drmax, mm)
             Drmax = io.Drmax - (io.rain - runoff) - io.idep + io.ETcadj

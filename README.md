@@ -1,5 +1,5 @@
 # pyfao56
-A Python implementation of the FAO-56 dual crop coefficient approach for crop water use estimation and irrigation scheduling
+A Python implementation of the FAO-56 dual crop coefficient approach for crop water use estimation and irrigation scheduling. 
 
 The pyfao56 Python package facilitates FAO-56 computations of daily soil water balance using the dual crop coefficient method to estimate crop evapotranspiration (ET).
 
@@ -93,21 +93,18 @@ Once these three classes are defined, users can then instantiate a Model class b
 Keep in mind: the pyfao56 Model assumes that the user provides information about a single plot/treatment/segment of a crop. Accordingly, users should specify plot/treatment-specific Parameters and Irrigation classes, as well as plot/treatment-specific start and end dates. If plots/treatments are grown in the same location and during the same season, then they can share a single Weather class.
 
 ### Additional (Optional) Functionality
-The pyfao56 package also supplies some pre-defined ways in which users can build upon the FAO-56 modeling methodology. As of pyfao56 Version 1.1, the additional functionality of pyfao56 consists in the classes:
-* Update
-* SoilProfile
+The pyfao56 package also supplies some pre-defined ways in which users can build upon the FAO-56 modeling methodology. As of pyfao56 Version 1.0, the additional functionality of pyfao56 consists in:
+* Update Class
 
 The Update class is meant to allow users to update key state variables of the model. At this time, the Update class allows users to update state variables for basal crop coefficients (Kcb), crop height (h), or crop cover (fc). When the pyfao56 Update class is populated and provided as an input to the Model class, pyfao56 overrides Model state variables with the variables of the Update class. 
 
-FAO-56 soil water balance methodology assumes a single, homogenous soil layer between the soil surface and the specified maximum rooting depth (Zrmax). However, that assumption can be loosened by providing stratified soil layer data to the SoilProfile class. The pyfao56 SoilProfile class gives users the ability to provide volumetric soil water content (cm^3/cm^3) measurements for multiple soil layers. When the pyfao56 SoilProfile class is populated and provided as an input to the Model class, the pyfao56 Model uses the information about the stratified soil layers in the daily soil water balance calculations.
-
-### Detailed Class Information
-Detailed information about each of the main pyfao56 Classes is provided below. Class docstrings also contain in-depth information about each of the classes. Reading the [source code](https://github.com/kthorp/pyfao56/tree/main/src/pyfao56) of the classes is also a valuable tool for learning more about each class.
+## Detailed Class Information
+Detailed information about each of the main pyfao56 Classes is provided below. Class docstrings also contain in-depth information about each of the classes. Reading the [source code](https://github.com/kthorp/pyfao56/tree/main/src/pyfao56) of the classes is an extremely valuable tool for learning more about each class. We encourage users, even those who are not experts in Python, to read through the source code to learn more about the FAO-56 methodology. 
 
 Every class of pyfao56 is designed with _**two**_ sorts of users in mind: users who prefer input/output files, and users who prefer to define inputs in a more programmatic fashion. For that reason, each pyfao56 class can read information from a (properly formatted) class-specific input text file. Alternatively, users can utilize Python to supply input information. All pyfao56 classes can also save class information to a formatted text file. Once saved, those text files can easily be supplied as input files for future implementations of pyfao56.
 
-#### Parameters
-The purpose of the Parameters class is to allow users to specify the inputs that are required for the FAO-56 water balance calculations. As of pyfao56 Version 1.1, the Parameters class contains **17 attributes** and **2 methods**.
+### Parameters
+The purpose of the Parameters class is to allow users to specify the inputs that are required for the FAO-56 water balance calculations. As of pyfao56 Version 1.0, the Parameters class contains **17 attributes** and **2 methods**.
 
 * ##### Attributes
     * Kcbini : float
@@ -167,18 +164,18 @@ The Parameter class values can be saved for future use by writing the Parameters
 * ##### Tips and Tricks 
 Instead of trying to make a text file with the proper formatting, users can instantiate a Parameters class (which will contain the default values), and then use the savefile method to write the default Parameters class to a text file (with a filepath of their choosing). Then, the user can open that new file in a text editor, overwrite the values there, save it again, and then load the file into the Parameters class. That way, users can worry less about file formatting and more about adjusting FAO-56 Parameters as they see fit.
 
-#### Weather
-The purpose of the Weather class is to allow users to specify the Weather input data required for the FAO-56 water balance calculations. As of pyfao56 Version 1.1, the Weather class contains **6 attributes** and **4 methods**.
+### Weather
+The purpose of the Weather class is to allow users to specify the Weather input data required for the FAO-56 water balance calculations. As of pyfao56 Version 1.0, the Weather class contains **6 attributes** and **4 methods**.
 
 * ##### Attributes
     * rfcrp : str
-        * Type of reference crop  - Short ('S') or Tall ('T')
+        * Type of reference crop  - Short ('S') or Tall ('T') _(default='S')_
     * z : float
-        * Weather station elevation (z) (m)
+        * Weather station elevation (z) (m) _(default='NAN')_
     * lat : float
-        * Weather station latitude (decimal degrees)
+        * Weather station latitude (decimal degrees) _(default='NAN')_
     * wndht : float
-        * Weather station wind speed measurement height (m)
+        * Weather station wind speed measurement height (m) _(default='NAN')_
     * cnames : list
         * Column names for wdata
     * wdata : DataFrame
@@ -214,9 +211,9 @@ After importing the pyfao56 Python package (`import pyfao56 as fao`), users can 
 
 Users who wish to use a text file to load information for the Weather class should follow the file format of example weather file [here](https://github.com/kthorp/pyfao56/blob/main/tests/test1/cotton2013.wth). Once they have added their weather data to the file, users can load the text file to the Weather class: `wth.loadfile('MyWeatherFilePath.wth')`
 
-Users who wish to input weather data to the Weather class in a more programmatic fashion will need to override the `customload()` method of Weather by using Python class inheritance. Once users have made a "child" class of Weather, they can override the customload method to populate child-Weather class attributes with their own weather data. The aim of the user's customload function in their child-Weather class should be to make their weather data fit the data frame design of the Weather wdata attribute.
+Users who wish to input weather data to the Weather class in a more programmatic fashion will need to override the `customload()` method of Weather by using Python class inheritance. Once users have made a "child" class of Weather, they can override the customload method to populate Weather class attributes with their own weather data. The aim of the user's customload function in their child-Weather class should be to make their weather data fit the data frame design of the Weather wdata attribute.
 
-If users do not have reference evapotranspiration (refET) calculated, then they can use the `compute_etref()` method to calculate it, provided that the weather class is populated with all other weather data. The `compute_etref()` method takes the index of the Weather class data frame (wdata) as an input, and returns ASCE standardized daily reference ET as the output. The `compute_etref` method should be written such that the method output is then written to the wdata dataframe.
+If users do not have reference evapotranspiration (refET) calculated, then they can use the `compute_etref()` method to calculate it, provided that the weather class is populated with all other weather data. The `compute_etref()` method takes the index of the Weather class data frame (wdata) as an input, and returns ASCE standardized daily reference ET as the output. The `compute_etref` method call should be written such that the method output is then written to the wdata dataframe.
 
 Aside: The `compute_etref` method uses the refet.py module to calculate refET. The refet.py module is designed as a utility class to be used in conjunction with the Weather class. The refet.py module contains methods for calculating ASCE standardized daily and hourly reference ET. Users can use the refet.py module separately from the rest of pyfao56, if they so choose.  
 
@@ -227,8 +224,15 @@ The Weather class data can be saved for future use by writing the Weather class 
 * ##### Tips and Tricks 
 Since it provides a structured way to organize daily weather data and easily calculate ASCE standardized reference ET, the pyfao56 Weather class is extremely valuable to irrigation management in Python. That said, out of all of the pyfao56 classes, the Weather Class is probably the most daunting for new users. Most users would benefit from creating Python functions that allow them to efficiently load weather data in a programmatic way. However, in the case of the Weather class, creating those Python functions requires some familiarity with [Python Class Inheritance](https://docs.python.org/3/tutorial/classes.html#inheritance). Prior to loading Weather data, we suggest that users review the basics of class inheritance and browse the [example child class provided in the azmet_maricopa.py module of the Custom subpackage](https://github.com/kthorp/pyfao56/blob/main/src/pyfao56/custom/azmet_maricopa.py). Keep in mind that the ultimate goal of the user-created child class of Weather should be to populate the Weather class attributes with relevant weather data. Overriding the Weather `customload()` method via Python class inheritance is the best way to ensure that the Weather class can be used by all users, regardless of the initial structure of their raw weather data. 
 
-#### Irrigation
-The purpose of the Irrigation class is to allow users to specify information about Irrigation events, which are inputs required for the FAO-56 water balance calculations. As of pyfao56 Version 1.1, the Irrigation class contains **1 attribute** and **3 methods**.
+If users have their weather data in a dataframe formatted like the wdata class attribute, then their class for customloading can be as simple as:
+
+    class weather_child(Weather):
+        def customload(self, df):
+            self.wdata = df
+where `df` is the variable name of the user's weather dataframe.
+
+### Irrigation
+The purpose of the Irrigation class is to allow users to specify information about Irrigation events, which are inputs required for the FAO-56 calculations. As of pyfao56 Version 1.0, the Irrigation class contains **1 attribute** and **3 methods**.
 
 * ##### Attributes
     * idata : DataFrame
@@ -260,7 +264,7 @@ A specific Irrigation class instantiation can be saved for future use by writing
 * ##### Tips and Tricks
 The `addevent()` class method should make it fairly straightforward for users to load irrigation data from a csv, Excel, or similar file. Users can create a for-loop that iterates through the file containing their irrigation information, and then uses the `addevent()` method to write that information to an Irrigation class instance.
 
-#### Model
+### Model
 The purpose of the Model class is to bring the rest of the pyfao56 classes together and use those classes to calculate a soil water balance based on FAO-56 methodology. As of pyfao56 Version 1.1, the Model class contains **10 attributes** and **2 methods**.
 
 * ##### Attributes
@@ -337,7 +341,7 @@ After users instantiate and populate Parameters, Weather, and Irrigation classes
 
 The 'StartDate' argument of the Model class instantiation is the year and day of year ('YYYY-DOY' format) from which the user would like the FAO-56 water balance calculations to begin. Similarly, the 'EndDate' argument is the year and day of year ('YYYY-DOY' format) at which the model should stop running. The Weather class dataframe (wdata) should include weather data for the start date, end date, and all the days in between. 
 
-In addition to 'StartDate' and 'EndDate', pyfao56 Parameters, Weather, and Irrigation classes are required to instantiate a Model class. Accordingly, Model class instantiation can only occur after instantiation of corresponding Parameters, Weather, and Irrigation classes.
+In addition to 'StartDate' and 'EndDate', pyfao56 Parameters, Weather, and Irrigation classes are required to instantiate a Model class. Accordingly, Model class instantiation can only occur _after_ instantiation of corresponding Parameters, Weather, and Irrigation classes.
 
 As of pyfao56 Version 1.0, the Model class can also be instantiated with an _**optional**_ argument: 
  * Users can choose to supply a pyfao56 **Update** class, which is meant to update the model state variables (see below).
@@ -350,8 +354,8 @@ To see the model output (without saving it), users can use Python's print functi
 
 To save the model output to a text file, users can use the 'savefile' class method: `mdl.savefile(FilePathForSavedFile.out`
 
-#### Update
-The purpose of the Update class is to give users a way to alter key Model state variables for user-specified time-steps. As of pyfao56 Version 1.1, the Update class contains **1 attribute** and **4 methods**.  
+### Update
+The purpose of the Update class is to give users a way to alter key Model state variables for user-specified time-steps. As of pyfao56 Version 1.0, the Update class contains **1 attribute** and **4 methods**.  
 
 * ##### Attributes
     * udata : DataFrame
@@ -392,16 +396,18 @@ A specific Update class instantiation can be saved for future use by writing the
 ## LIRF Features (as of 11/10/2022)
 Below is detailed information about changes to pyfao56 that were made to incorporate features of the water balance spreadsheet from the USDA-ARS, WMSRU Limited Irrigation Research Farm (LIRF). The LIRF water balance spreadsheet has been used for over a decade. While originally closely based on FAO-56 methodology, incremental changes have been made to relax some assumptions of FAO-56. The changes are meant to give a more detailed look at the soil water balance. 
 
+For instance, FAO-56 soil water balance methodology assumes a single, homogenous soil layer between the soil surface and the specified maximum rooting depth (Zrmax). However, that assumption can be loosened by providing stratified soil layer data to the new SoilProfile class. The pyfao56 SoilProfile class (see below) gives users the ability to provide volumetric soil water content (cm^3/cm^3) measurements for multiple soil layers. When the pyfao56 SoilProfile class is populated and provided as an input to the Model class, the pyfao56 Model uses the information about the stratified soil layers in the daily soil water balance calculations.
+
 ### Main Package Changes
 
-#### Model
-With LIRF features, the pyfao56 Model class can also be instantiated with (up to) three _**optional**_ arguments: 
+### Model
+With LIRF features, the pyfao56 Model class can now be instantiated with (up to) three _**optional**_ arguments: 
  * First, users can choose to supply a pyfao56 **Update** class, which is meant to update the model state variables.
  * Additionally, users can choose to also supply a **SoilProfile** class, which causes the Model class to loosen some FAO-56 assumptions and calculate a water balance for stratified soil layers. 
- * Finally, users can choose to keep the Total Available Water depletion fraction (p) constant by setting the '**cons_p**' argument to True at Model instantiation: `mdl = fao.Model('StartDate', 'EndDate', par, wth, irr, cons_p=True)`. FAO-56 varies the depletion fraction based on daily crop evapotranspiration (ETc). By setting the depletion fraction to a constant value, users can make Readily Available Water vary solely with rooting depth. To see more on the Total Available Water depletion fraction, please see FAO-56 page 162 and Table 22.
+ * Finally, users can choose to keep the total available water (TAW) depletion fraction (p) constant by setting the '**cons_p**' argument to `True` at Model instantiation: `mdl = fao.Model('StartDate', 'EndDate', par, wth, irr, cons_p=True)`. FAO-56 varies the depletion fraction based on daily crop evapotranspiration (ETc). By setting the depletion fraction to a constant value, users can make readily available water (RAW) vary solely with rooting depth. For more on the total available water depletion fraction, please see [FAO-56 page 162 and Table 22](https://www.fao.org/3/x0490e/x0490e0e.htm#readily%20available%20water%20(raw)).
 
-#### SoilProfile
-The purpose of the SoilProfile class is to provide a way for users to force the pyfao56 Model to consider information about stratified soil layers. While FAO-56 methodology assumes a single, homogenous soil layer, many users will have access to volumetric soil water content data that is specific to specific soil layers. As of pyfao56 Version 1.1, the SoilProfile class contains **2 attributes** and **3 methods**.   
+### SoilProfile
+The purpose of the SoilProfile class is to provide a way for users to force the pyfao56 Model to consider information about stratified soil layers. While FAO-56 methodology assumes a single, homogenous soil layer, many users will have access to volumetric soil water content data that is specific to soil layers. As of pyfao56 Version 1.1, the SoilProfile class contains **2 attributes** and **3 methods**.   
 
 * ##### Attributes
     * cnames : list
@@ -426,7 +432,7 @@ The purpose of the SoilProfile class is to provide a way for users to force the 
         * Override this function to customize loading soil data.
     
 * ##### How to Use
-After importing the pyfao56 Python Package (`import pyfao56 as fao`), users can choose to instantiate a SoilProfile class: `sol = fao.SoilProfile()` (note: as of writing, class instantiation is a little more complex than this because SoilWaterContent is not officially incorporated into pyfao56...in the meantime, it should be saved to the user's machine and then imported like any other local Python module)
+After importing the pyfao56 Python Package (`import pyfao56 as fao`), users can choose to instantiate a SoilProfile class: `sol = fao.SoilProfile()` (note: as of writing, class instantiation is a little more complex than this because SoilProfile is not officially incorporated into pyfao56...in the meantime, it should be saved to the user's machine and then imported like any other local Python module)
 
 The main attribute of the SoilProfile class is the sdata data frame. As a row index, the sdata data frame uses the bottom of a soil layer in cm. In each row, the sdata data frame should contain field capacity, wilting point, and initial volumetric water content (cm^3/cm^3) data for the layer specified by the row index.
 
@@ -459,12 +465,12 @@ The two modules for managing observed data are:
 * soil_water_deficit.py (contains the SoilWaterDeficit class)
 
 The module for evaluating pyfao56 data is:
-* evaluations.py (contains Visualize and Analyze classes)
+* evaluations.py (contains Evaluations and Analyze classes)
 
-Each of the modules in Tools will be discussed more thoroughly below. Of course, users can choose which (if any) of the classes in Tools to use. Some users may choose to only utilize the evaluations module, while others choose to only use some of the data management capabilities in the other modules.
+Each of the modules in Tools will be discussed more thoroughly below. Of course, users can choose which (if any) of the classes in Tools to use. Some users may choose to only utilize the Evaluations class, while others may choose to only use the data management capabilities of the other modules.
 
-#### SoilWaterContent
-The purpose of the SoilWaterContent class is to provide input and output tools for using volumetric soil water content data in the pyfao56 environment.
+### SoilWaterContent
+The purpose of the SoilWaterContent class is to provide input and output tools for using volumetric soil water content data in the pyfao56 environment. As of writing, the SoilWaterContent class contains **1 attribute** and **3 methods**.  
 
 * ##### Attributes
   * swcdata : DataFrame
@@ -482,7 +488,7 @@ The purpose of the SoilWaterContent class is to provide input and output tools f
         data.
           
 * ##### How to Use
-Users should begin by importing the SoilWaterContent class: `swc = fao.tools.SoilWaterContent` (note: as of writing, class instantiation is a little more complex than this because SoilWaterContent is not officially incorporated into pyfao56...in the meantime, it should be saved to the user's machine and then imported like any other local Python module)
+Users should begin by creating a SoilWaterContent class instance: `swc = fao.tools.SoilWaterContent` (note: as of writing, class instantiation is a little more complex than this because SoilWaterContent is not officially incorporated into pyfao56...in the meantime, the module should be saved to the user's machine and then the class can be imported like any other class contained in a local Python module)
 
 The main attribute of the SoilWaterContent class is the swcdata data frame. The swcdata data frame uses the bottom of a soil layer, in cm, as the row index. For columns, the swcdata data frame uses the date of the observation in a string ('YYYY-DOY') format. The entries of the dataframes should be the volumetric water content observations (cm^3/cm^3) taken on the day indicated in the column name and for the layer indicated in the row index. 
 
@@ -495,14 +501,14 @@ Users who wish to populate the swcdata attribute in a more programmatic fashion 
     class swc_child(SoilWaterContent):
         def customload(self, df):
             self.swcdata = df
- where 'df' is the variable of the data frame from the spreadsheet. 
-
-Once a SoilWaterContent class is populated with data, that data can then be saved: `swc.savefile('FilePathForSavedFile.smc')`, passed to a SoilWaterDeficit class to calculate observed soil water deficit (see below), or used for other purposes in Python.
+ where `df` is the variable name of the data frame created from the spreadsheet. 
 
 To quickly view a given SoilWaterContent class, use Python's print function: `print(swc)`
 
-#### SoilWaterDeficit
-The purpose of the SoilWaterDeficit class is to provide input and output tools for incorporating observed soil water deficit data into the pyfao56 environment. 
+Once a SoilWaterContent class is populated with data, that data can then be saved: `swc.savefile('FilePathForSavedFile.smc')`, passed to a SoilWaterDeficit class to calculate observed soil water deficit (see below), or used for other purposes in Python.
+
+### SoilWaterDeficit
+The purpose of the SoilWaterDeficit class is to provide input and output tools for incorporating observed soil water deficit data into the pyfao56 environment. As of writing, the SoilWaterDeficit class contains **2 attributes** and **5 methods**. 
 
 * ##### Attributes
     * swddata : DataFrame
@@ -538,13 +544,28 @@ The purpose of the SoilWaterDeficit class is to provide input and output tools f
         Populates rzdata class attribute.  
           
 * ##### How to Use
+Users should begin by creating a SoilWaterDeficit class instance: `swd = fao.tools.SoilWaterDeficit` (note: as of writing, class instantiation is a little more complex than this because SoilWaterDeficit is not officially incorporated into pyfao56...in the meantime, the module should be saved to the user's machine and then the class can be imported like any other class contained in a local Python module)
 
+The main attribute of the SoilWaterDeficit class is the swddata data frame. The swddata data frame uses the bottom of a soil layer, in cm, as the row index. For columns, the swddata data frame uses the date of the observation in a string ('YYYY-DOY') format. The entries of the dataframes should be the fractional soil water deficit observations (cm^3/cm^3) taken on the day indicated in the column name and for the layer indicated in the row index. 
 
-#### Evaluations
-The purpose of the Evaluations module is to streamline common visualizations and numerical analyses for pyfao56 users.  
+Like the other classes of pyfao56, there are multiple ways to load data into the swddata class attribute. In this case, there are  **_three_** ways to load data into the swddata attribute. 
 
-#### Evaluations - Visualize
+Users who wish to use a text file to populate the SoilWaterDeficit class should follow the format of the example soil water deficit file provided [here](https://github.com/jbrekel/pyfao56_LIRF_features/blob/LIRF-main/tests/test6/E12_FF_2022.swd) (of course, users should change the row indices to match their assumed soil layer depths). Once the fractional soil water deficit observations have been added to the properly formatted text file, users can then load the file to the SoilWaterDeficit class: `swd.loadfile('MySoilWaterDeficitFilePath.swd')`
 
+Users who wish to populate the swddata attribute in a more programmatic fashion can use Python class inheritance to create a "child" class to the SoilWaterDeficit class, and then override the `customload()` method of the SoilWaterContent class. 
+
+Alternatively, the swddata class attribute can also be populated by using the "compute_swd_from_swc" class method. To use that class method, users should first populate SoilWaterContent and SoilProfile class instances. The method takes volumetric water content field capacity values from the SoilProfile class method. The method then subtracts the SoilWaterContent class observations from the field capacity values in order to calculate observed soil water deficit (cm^3/cm^3) by layer. The method populates the swddata class attribute with those calculations. 
+
+To quickly view the observed fractional soil water deficit values by layer of a given SoilWaterDeficit class, use Python's print function: `print(swd)`
+
+Once a SoilWaterDeficit class's swddata attribute is populated, that data can then be saved: `swd.savefile('FilePathForSavedFile.swd')`
+
+Unlike other pyfao56 classes, the SoilWaterDeficit class contains an additional data frame class attribute. The `rzdata` attribute contains observed soil water deficit, now in millimeters, both in the active root zone (SWDr) and in the maximum root zone (SWDrmax). The rzdata data frame also contains columns for the year, day of year (DOY), and root depth (Zr) in meters. 
+
+To populate the rzdata dataframe, users should provide a Model class instance to the "compute_root_zone_swd" class method. That method uses the swddata class attribute (which should be populated prior to the method call) and the rooting depth information from the Model class to compute observed soil water deficit (mm) in the root zone and in the maximum root zone. At this point, built-in methods for saving a particular rzdata class attribute do not exist.
+
+### Evaluations
+The purpose of the Evaluations class is to streamline useful visualizations and numerical analyses for pyfao56 users. At the time of writing, the Evaluations class contains **3 attributes** and **2 methods**.
 
 * ##### Attributes
     * mdl : pyfao56 Model class
@@ -556,17 +577,50 @@ The purpose of the Evaluations module is to streamline common visualizations and
         (default = None)  
           
 * ##### Methods
-    * plot_Dr(drmax=False, raw=False, water_events=False, ks=False,
-            title=None, save=None, show=True)
+    * plot_Dr(drmax=False, raw=False, water_events=False, obs=False, 
+            ks=False, title=None, save=None, show=True)
         * Create a plot of Modeled soil water depletion
     * plot_ET(rET=True, etc=True, etcadj=True, water_events=False,
             title=None, save=None, show=True)
         * Create a plot of Modeled evapotranspiration  
     
 * ##### How to Use
+Users should begin by creating an Evaluations class instance: `eval = fao.tools.Evaluations(mdl=mdl)` (note: as of writing, class instantiation is a little more complex than this because Evaluations is not officially incorporated into pyfao56...in the meantime, the module should be saved to the user's machine and then the class can be imported like any other class contained in a local Python module). 
 
-#### Evaluations - Analyze
-This class has not yet been made.
+To instantiate an Evaluations class, a Model class instance **_must_** be supplied. If users want to use observed soil water deficit data in their evaluations, then a SoilWaterDeficit class instance must also be passed to Evaluations at instantiation: `eval = fao.tools.Evaluations(mdl=mdl, swd=swd)`
+
+The main attribute of the Evaluations class is the edata data frame. All evaluations use the edata attribute in some way. At class instantiation, the Evaluations class creates edata out of the odata attribute of the Model class instance that is passed to Evaluations. If a SoilWaterDeficit class instance is also passed to Evaluations at instantiation, then Evaluations adds the "SWDr" and "SWDrmax" columns from the SoilWaterDeficit rzdata attribute to the edata attribute. (Note: an error will occur if Evaluations is passed a SoilWaterDeficit class instance that does not have rzdata populated.)
+
+Once the edata attribute is populated, users can then use the class methods to evaluate their pyfao56 data. Currently, Evaluations features two methods for visualizing/plotting pyfao56 data. Each method uses the matplotlib and seaborn libraries. The methods were designed with flexibility in mind, so they feature numerous options for customizing the plots that result from them. 
+
+First, the plot_dr method creates a line plot of modeled soil water depletion (Dr) with millimeters per day on the y-axis and day of year on the x-axis. This basic plot [(example here)](https://github.com/jbrekel/pyfao56_LIRF_features/blob/LIRF-main/tests/test6/E12_FF_2022_basic_dr.png) can be generated by calling `eval.plot_Dr()` after instantiating the Evaluations class. Several optional features can be added to the figure:
+
+* `drmax=True` - adds a line plot for the modeled  depletion for the maximum root zone (Drmax)
+* `raw=True` - adds a line plot of modeled readily available water (RAW)
+* `water_events=True` - adds a scatter plot of Rain and Irrigation events
+* `obs=True` - adds a scatter plot of observed soil water deficit values (taken from a SoilWaterDeficit class instance)
+* `ks=True` - adds a line plot of Ks values above the Dr lineplot
+* `title='StringTitle'` - changes the title of the plot to 'StringTitle'
+* `save='FilePath.png'` - saves an image of the plot to the filepath provided in the argument (file extension should be an image file extension, preferably a .png)
+* `show=False` - does not display the plot after the method call (in case you simply want to save rather than view)
+
+[Here](https://github.com/jbrekel/pyfao56_LIRF_features/blob/LIRF-main/tests/test6/E12_FF_2022_complex_dr.png) is an example of what the plot looks like with all of the optional features added.
+
+The default settings for the first method are: `plot_Dr(drmax=False, raw=False, water_events=False, obs=False, ks=False, title=None, save=None, show=True)`.  
+
+Second, the plot_ET method creates line plots of modeled reference ET, crop ET, and adjusted crop ET. Once again, millimeters per day is on the y-axis and day of year is on the x-axis. The default plot that results from this method can be seen [here](https://github.com/jbrekel/pyfao56_LIRF_features/blob/LIRF-main/tests/test6/E12_FF_2022_ET.png). Like the previous method, several optional features allow users flexibility in use:
+
+* `rET=False` - removes the line plot of reference ET
+* `etc=False` - removes the line plot of crop ET
+* `etcadj=False` - removes the line plot of adjusted crop ET
+* `water_events=True` - adds a scatter plot of Rain and Irrigation events
+* `title='StringTitle'` - changes the title of the plot to 'StringTitle'
+* `save='FilePath.png` - saves an image of the plot to the filepath provided in the argument (file extension should be an image file extension, preferably a .png)
+* `show=False` - does not display the plot after the method call (in case you simply want to save rather than view)
+
+Notice that by changing the settings to: `eval.plot_ET(rET=False, etc=False, etcadj=False, water_events=True, title='Irrigation and Rainfall', save=None, show=True)`, users can generate a simple scatter plot of irrigation and rain events over time like [this](https://github.com/jbrekel/pyfao56_LIRF_features/blob/LIRF-main/tests/test6/E12_FF_2022_Water.png).
+
+At this stage, the primary purpose of the Evaluations class is to provide users with the ability to plot data in a flexible and straightforward way. Future features should focus on increasing user flexibility and adding methods for numerical analysis, all while keeping the class relatively simple on the user side.
 
 ## Further examples
 Further example scripts for setting up and running the model are [here](https://github.com/kthorp/pyfao56/tree/main/tests).
