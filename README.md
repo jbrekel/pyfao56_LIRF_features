@@ -393,7 +393,7 @@ To quickly view a given Update class, use Python's print function: `print(upd)`
 
 A specific Update class instantiation can be saved for future use by writing the udata attribute to a properly formatted text file. That can be done easily via the savefile class method. To use the savefile method: `upd.savefile(FilePathForSavedFile.upd)`
 
-## LIRF Features (as of 11/10/2022)
+## LIRF Features (as of 11/16/2022)
 Below is detailed information about changes to pyfao56 that were made to incorporate features of the water balance spreadsheet from the USDA-ARS, WMSRU Limited Irrigation Research Farm (LIRF). The LIRF water balance spreadsheet has been used for over a decade. While originally closely based on FAO-56 methodology, incremental changes have been made to relax some assumptions of FAO-56. The changes are meant to give a more detailed look at the soil water balance. 
 
 For instance, FAO-56 soil water balance methodology assumes a single, homogenous soil layer between the soil surface and the specified maximum rooting depth (Zrmax). However, that assumption can be loosened by providing stratified soil layer data to the new SoilProfile class. The pyfao56 SoilProfile class (see below) gives users the ability to provide volumetric soil water content (cm^3/cm^3) measurements for multiple soil layers. When the pyfao56 SoilProfile class is populated and provided as an input to the Model class, the pyfao56 Model uses the information about the stratified soil layers in the daily soil water balance calculations.

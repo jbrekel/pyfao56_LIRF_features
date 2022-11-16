@@ -142,7 +142,7 @@ class Evaluations:
             ax.set_xticks(range(x_tick_start, start_doy, 5))
             # y axis:
             swd_max = round(self.edata['Dr'].max())
-            swd_max += (swd_max % 10) + 10
+            swd_max += (-(swd_max % 10) + 10) + 6
             ax.set_ylim(1, swd_max)
             ax.set_yticks(range(5, swd_max, 5))
             # Changing the background color of the plot
@@ -184,7 +184,7 @@ class Evaluations:
             ax.set_xticks(range(x_tick_start, start_doy, 5))
             # y axis:
             swd_max = round(self.edata['Dr'].max())
-            swd_max += (swd_max % 10) + 10
+            swd_max += (-(swd_max % 10) + 10) + 6
             ax.set_ylim(1, swd_max)
             ax.set_yticks(range(5, swd_max, 5))
             # Changing the background color of the plot
@@ -322,7 +322,7 @@ class Evaluations:
         ax.set_xticks(range(x_tick_start, start_doy, 5))
         # y axis:
         rET_max = round(self.edata['ETref'].max())
-        rET_max += rET_max % 5
+        rET_max += -(rET_max % 2) + 3
         ax.set_ylim(0, rET_max)
         ax.set_yticks(range(0, rET_max, 2))
 
