@@ -138,8 +138,8 @@ class Evaluations:
             # x axis:
             mykey = self.mdl.startDate.strftime('%Y-%j')
             start_doy = int(self.edata['DOY'].loc[mykey])
-            x_tick_start = -1 * (start_doy % 5)
-            ax.set_xticks(range(x_tick_start, start_doy, 5))
+            x_tick_start = -(start_doy % 5)
+            ax.set_xticks(range(x_tick_start, 365, 5))
             # y axis:
             swd_max = round(self.edata['Dr'].max())
             swd_max += (-(swd_max % 10) + 10) + 6
@@ -180,8 +180,8 @@ class Evaluations:
             # x axis:
             mykey = self.mdl.startDate.strftime('%Y-%j')
             start_doy = int(self.edata['DOY'].loc[mykey])
-            x_tick_start = -1 * (start_doy % 5)
-            ax.set_xticks(range(x_tick_start, start_doy, 5))
+            x_tick_start = -(start_doy % 5)
+            ax.set_xticks(range(x_tick_start, 365, 5))
             # y axis:
             swd_max = round(self.edata['Dr'].max())
             swd_max += (-(swd_max % 10) + 10) + 6
@@ -318,8 +318,8 @@ class Evaluations:
         # x axis:
         mykey = self.mdl.startDate.strftime('%Y-%j')
         start_doy = int(self.edata['DOY'].loc[mykey])
-        x_tick_start = -1 * (start_doy % 5)
-        ax.set_xticks(range(x_tick_start, start_doy, 5))
+        x_tick_start = -(start_doy % 5)
+        ax.set_xticks(range(x_tick_start, 365, 5))
         # y axis:
         rET_max = round(self.edata['ETref'].max())
         rET_max += -(rET_max % 2) + 3
