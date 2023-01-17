@@ -253,5 +253,31 @@ class SoilWaterDeficit:
         rzdata['SWDr'] = pd.Series(SWDr)
         rzdata['SWDrmax'] = pd.Series(SWDrmax)
 
+        # NEW Calculating Observed Ks
+        Ks = {}
+        for mykey, value in rzdata.iterrows():
+            taw = mdl.odata.loc[mykey, 'TAW']
+            raw = mdl.odata.loc[mykey, 'RAW']
+            dr = rzdata.loc[mykey, 'SWDr']
+            Ks[mykey] = sorted([0.0, (taw - dr) / (taw - raw), 1.0])[1]
+
+        rzdata['ObsKs'] = pd.Series(Ks)
+
+        # # Saving Root Zone SWD
+        # fmts = {'Year': '{:4s}'.format, 'DOY': '{:3s}'.format,
+        #         'Zr': '{:5.3f}'.format, 'SWDr': '{:7.3f}'.format,
+        #         'SWDrmax': '{:7.3f}'.format, 'ObsKs': '{:5.3f}'.format}
+        # ast = '*' * 72
+        # s = ('{:s}\n'
+        #      'pyfao56: FAO-56 Evapotranspiration in Python\n'
+        #      'Tools: Soil Water Deficit (mm) in Root Zone\n'
+        #      '{:s}\n'
+        #      'Year DOY    Zr    SWDr SWDrmax ObsKs\n').format(ast, ast)
+        # s += swd.rzdata.to_string(header=False, index=False, formatters=fmts)
+        # rz_file = os.path.join(module_dir, f'input_files/{plot}{trt}2022.swdr')
+        # f = open(rz_file, 'w')
+        # f.write(s)
+        # f.close()
+
         # Populate rzdata class attribute
         self.rzdata = rzdata

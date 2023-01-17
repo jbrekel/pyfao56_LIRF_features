@@ -53,14 +53,15 @@ class Evaluations:
         # Getting rid of duplicate columns from mdl.odata
         edata = mdl.odata.loc[:, ~mdl.odata.columns.duplicated()].copy()
         if self.swd is not None:
-            edata = edata.merge(self.swd.rzdata[['SWDr', 'SWDrmax']],
+            edata = edata.merge(self.swd.rzdata[['SWDr', 'SWDrmax', 'ObsKs']],
                                 right_index=True,
                                 left_index=True,
                                 how='outer')
         self.edata = edata
 
     def plot_Dr(self, drmax=False, raw=False, water_events=False,
-                obs=False, ks=False, title=None, save=None, show=True):
+                obs=False, ks=False, dp=False, title=None,
+                save=None, show=True):
         """Plot soil water depletion (Dr), with water amount (mm/day) on
            the y-axis, and day of year (DOY) on the x-axis.
 
@@ -87,6 +88,10 @@ class Evaluations:
             If False, the stress coefficient (Ks) is not plotted; if
             True, figure includes a Ks line plot at the top.
             (default = False)
+        dp : boolean, optional
+            If False, then deep percolation is not plotted; if True,
+            figure includes a DP scatter plot below main plot.
+            (default = False)
         title : str, optional
             If None, the figure title is "pyfao56 Soil Water Depletion".
             Change the title by providing a string here.
@@ -111,7 +116,8 @@ class Evaluations:
         dr_l      = 'Root Zone Depletion'
         drmax_l   = 'Max Root Depth Depletion'
         raw_l     = 'Readily Available Water (RAW)'
-        ks_l      = 'pyfao56 Ks'
+        ks_l      = 'Ks'
+        dp_l      = 'Deep Percolation'
         f_size    = 'medium'
         frame     = False
         # Colors
@@ -121,16 +127,10 @@ class Evaluations:
         raw_c     = 'mediumorchid'
         water_c   = 'navy'
         ks_c      = 'lightsalmon'
-        
-        # Checking for Ks before making axes
-        if ks:
-            # Creating Figure
-            fig, (ax2, ax) = plt.subplots(2, sharex=True, gridspec_kw=
-                                            {'height_ratios': [1, 8]})
-            fig.set_figheight(8)
-            fig.set_figwidth(16)
+        dp_c      = 'crimson'
 
-            # Main plot:
+        # Creating inner functions for making specific axes / figures
+        def main_plot(ax):
             # Setting axis labels:
             ax.set(ylabel=y_l)
             plt.xlabel(x_l)
@@ -143,63 +143,121 @@ class Evaluations:
             # y axis:
             swd_max = round(self.edata['Dr'].max())
             swd_max += (-(swd_max % 10) + 10) + 6
-            ax.set_ylim(1, swd_max)
+            ax.set_ylim(1.05, swd_max)
             ax.set_yticks(range(5, swd_max, 5))
+            return ax
+
+        def ks_plot(ax):
+            # Setting y-axis ticks
+            ax.set_ylim(0, 1.1)
+            ax.set_yticks([x * 0.5 for x in range(1, 3)])
+            # Adding Ks lineplot
+            edata.plot(x=x, y='Ks', color=ks_c, label='pyfao56 ' + ks_l, ax=ax2)
+            # Creating Grid
+            ax.grid(ls=":")
             # Changing the background color of the plot
             ax.set_facecolor(bg_c)
-            # Adding gridlines to the plot
-            ax.grid(ls=":")
-
-            # Ks Plot
-            # Setting y-axis ticks
-            ax2.set_ylim(0, 1.1)
-            ax2.set_yticks([x * 0.5 for x in range(1, 3)])
-            # Creating Grid
-            ax2.grid(ls=":")
-            # Changing the background color of the plot
-            ax2.set_facecolor(bg_c)
-            # Adding Ks lineplot
-            sns.lineplot(data=edata, x=x, y='Ks',
-                         color=ks_c, label=ks_l, ax=ax2)
+            if obs:
+                if self.swd.rzdata is None:
+                    print('To plot observed data, please provide a '
+                          'SoilWaterDeficit class rzdata attribute.')
+                else:
+                    ax.scatter(x, 'ObsKs', data=edata,
+                                color=ks_c, marker='s', s=40,
+                                edgecolor='salmon',
+                                label='Observed ' + ks_l)
             # Adding legend
-            ax2.legend(fontsize=f_size, loc='lower left',
+            ax.legend(fontsize=f_size, loc='lower left',
                        frameon=frame)
+
+        def dp_plot(ax, dp_max):
+            # Specifying DP parameters
+            if dp_max > 0.0:
+                ax.set_ylim(0, dp_max + 10)
+            else:
+                ax.set_ylim(1, dp_max + 10)
+            ax.invert_yaxis()
+
+            # DP plot
+            # Creating Grid
+            ax.grid(ls=":")
+            # Changing the background color of the plot
+            ax.set_facecolor(bg_c)
+            ax.scatter(x, 'DP', data=edata, c=dp_c, marker='_', s=150, label=dp_l, linewidth=2)
+            # Adding Legend
+            ax.legend(fontsize=f_size, loc='upper left',
+                       frameon=frame)
+            return ax
+
+        # Checking for DeepPerc before making axes
+        if dp:
+            # Checking for Ks before making axes
+            if ks:
+                # Check to see if DP is worth graphing
+                dp_max = round(self.edata['DP'].max())
+                if dp_max > 0.0:
+                    # Creating Figure
+                    fig, (ax2, ax, ax3) = plt.subplots(3, sharex=True,
+                                                       gridspec_kw={'height_ratios': [4, 32, 6]})
+                    ax3.yaxis.set_major_locator(plt.MaxNLocator(5))
+                else:
+                    # Creating Figure
+                    fig, (ax2, ax, ax3) = plt.subplots(3, sharex=True,
+                                                       gridspec_kw={'height_ratios': [2, 16, 1]})
+                    ax3.yaxis.set_major_locator(plt.MaxNLocator(2))
+
+                # # Ks Plot
+                ks_plot(ax2)
+
+            else:
+                # Check to see if DP is worth graphing
+                dp_max = round(self.edata['DP'].max())
+                if dp_max > 0.0:
+                    # Creating Figure
+                    fig, (ax, ax3) = plt.subplots(2, sharex=True,
+                                                     gridspec_kw={'height_ratios': [16, 3]})
+                    ax3.yaxis.set_major_locator(plt.MaxNLocator(5))
+                else:
+                    # Creating Figure
+                    fig, (ax, ax3) = plt.subplots(2, sharex=True,
+                                                     gridspec_kw={'height_ratios': [16, 1]})
+                    ax3.yaxis.set_major_locator(plt.MaxNLocator(2))
+
             # Removing space between the plots
             fig.subplots_adjust(hspace=0)
-        else:
-            # Creating Figure
-            fig, ax = plt.subplots()
-            fig.set_figheight(8)
-            fig.set_figwidth(16)
 
-            # Main plot:
-            # Setting axis labels:
-            ax.set(ylabel=y_l)
-            plt.xlabel(x_l)
-            # Setting axis ticks:
-            # x axis:
-            mykey = self.mdl.startDate.strftime('%Y-%j')
-            start_doy = int(self.edata['DOY'].loc[mykey])
-            x_tick_start = -(start_doy % 5)
-            ax.set_xticks(range(x_tick_start, 365, 5))
-            # y axis:
-            swd_max = round(self.edata['Dr'].max())
-            swd_max += (-(swd_max % 10) + 10) + 6
-            ax.set_ylim(1, swd_max)
-            ax.set_yticks(range(5, swd_max, 5))
-            # Changing the background color of the plot
-            ax.set_facecolor(bg_c)
-            # Adding gridlines to the plot
-            ax.grid(ls=":")
+            # DP plot
+            dp_plot(ax3, dp_max)
+
+        else:
+            # Checking for Ks before making axes
+            if ks:
+                # Creating Figure
+                fig, (ax2, ax) = plt.subplots(2, sharex=True, gridspec_kw={'height_ratios': [1, 8]})
+
+                # # Ks Plot
+                ks_plot(ax2)
+
+                # Removing space between the plots
+                fig.subplots_adjust(hspace=0)
+
+            else:
+                # Creating Figure
+                fig, ax = plt.subplots()
+
+        # Changing the size of the figure
+        fig.set_figheight(8)
+        fig.set_figwidth(16)
+
+        # Main plot:
+        main_plot(ax)
 
         # Making Dr lineplot
-        sns.lineplot(data=edata, x=x, y='Dr',
-                     color=dr_c, label=dr_l, ax=ax)
+        edata.plot(x=x, y='Dr', color=dr_c, label=dr_l, ax=ax)
 
         # Making Drmax lineplot if requested
         if drmax:
-            sns.lineplot(data=edata, x=x, y='Drmax',
-                         color=drmax_c, label=drmax_l, ax=ax)
+            edata.plot(x=x, y='Drmax', color=drmax_c, label=drmax_l, ax=ax)
 
         # Adding observed SWD if requested:
         if obs:
@@ -207,29 +265,36 @@ class Evaluations:
                 print('To plot observed data, please provide a '
                       'SoilWaterDeficit class rzdata attribute.')
             else:
-                sns.scatterplot(data=edata, x=x, y='SWDr',
-                                color=dr_c, marker='s', s=40,
-                                edgecolor='darkslategray',
-                                label='Observed '+dr_l, ax=ax)
+                ax.scatter(x, 'SWDr', data=edata,
+                           color=dr_c, marker='s', s=40,
+                           edgecolor='darkslategray',
+                           label='Observed '+dr_l)
                 if drmax:
-                    sns.scatterplot(data=edata, x=x, y='SWDrmax',
-                                    color=drmax_c, marker='s', s=40,
-                                    edgecolor='teal',
-                                    label='Observed '+drmax_l, ax=ax)
+                    ax.scatter(x, 'SWDrmax', data=edata,
+                               color=drmax_c, marker='s', s=40,
+                               edgecolor='teal',
+                               label='Observed '+drmax_l)
 
         # Adding RAW lineplot if requested
         if raw:
-            sns.lineplot(data=edata, x=x, y='RAW',
-                         color=raw_c, label=raw_l, ax=ax)
+            edata.plot(x=x, y='RAW', color=raw_c, label=raw_l, ax=ax)
 
         # Adding water events if requested
         if water_events:
-            sns.scatterplot(data=edata, x=x, y='Rain',
-                            color=water_c, marker='+', s=60,
-                            label='Rain', ax=ax)
-            sns.scatterplot(data=edata, x=x, y='Irrig',
-                            color=water_c, marker='x', s=60,
-                            label='Irrigation', ax=ax)
+            ax.scatter(x, 'Rain', data=edata,
+                       color=water_c, marker='+', s=55, linewidth=0.70,
+                       label='Rain')
+            ax.scatter(x, 'Irrig', data=edata,
+                       color=water_c, marker='x', s=55, linewidth=0.70,
+                       label='Irrigation')
+
+        # Changing the background color of the plot
+        ax.set_facecolor(bg_c)
+
+        # Adding gridlines to the plot
+        ax.grid(ls=":")
+        # Making legend for the plot
+        ax.legend(fontsize=f_size, loc='upper left', frameon=frame)
 
         # Adding plot title - either user-defined or default
         if title is None:
@@ -237,8 +302,6 @@ class Evaluations:
         else:
             plt.suptitle(title)
 
-        # Making legend for the plot
-        ax.legend(fontsize=f_size, loc='upper left', frameon=frame)
         # Saving and Showing the plot (if desired)
         if save is not None:
             plt.savefig(save)
