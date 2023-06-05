@@ -323,8 +323,8 @@ class Model:
                 io.wndsp = 2.0
             io.rhmin = self.wth.wdata.loc[mykey,'RHmin']
             if math.isnan(io.rhmin):
-                tmax = self.wth.wdata.loc[mykey,'Tmax']
-                tdew = self.wth.wdata.loc[mykey,'Tmin']
+                io.tmax = self.wth.wdata.loc[mykey,'Tmax']
+                io.tdew = self.wth.wdata.loc[mykey,'Tmin']
                 emax = 0.6108*math.exp((17.27*io.tmax)/
                                        (io.tmax+237.3))
                 ea   = 0.6108*math.exp((17.27*io.tdew)/
