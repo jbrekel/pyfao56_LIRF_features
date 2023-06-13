@@ -118,7 +118,7 @@ class Model:
     """
 
     def __init__(self, start, end, par, wth, irr, sol=None, upd=None,
-                 cons_p=False):
+                 cons_p=False, ks_curve='linear'):
         """Initialize the Model class attributes.
 
         Parameters
@@ -152,6 +152,7 @@ class Model:
         self.sol = sol
         self.upd = upd
         self.cons_p = cons_p
+        self.ks_curve = ks_curve
         self.cnames = ['Year','DOY','DOW','Date','ETref','tKcb','Kcb',
                        'h','Kcmax','fc','fw','few','De','Kr','Ke','E',
                        'DPe','Kc','ETc','TAW','TAWrmax','TAWb','Zr','p',
@@ -488,8 +489,20 @@ class Model:
         #Readily available water (RAW, mm) - FAO-56 Equation 83
         io.RAW = io.p * io.TAW
 
-        #Transpiration reduction factor (Ks, 0.0-1.0) - FAO-56 Eq. 84
-        io.Ks = sorted([0.0, (io.TAW-io.Dr)/(io.TAW-io.RAW), 1.0])[1]
+        #Transpiration reduction factor (Ks, 0.0-1.0)
+        if self.ks_curve == 'linear':
+            #Linear Relationship - FAO-56 Eq. 84
+            io.Ks = sorted([0.0, (io.TAW-io.Dr)/(io.TAW-io.RAW), 1.0])[1]
+        elif self.ks_curve == 'exponential':
+            #Relative soil water depletion (mm / mm)
+            rDr = io.Dr / io.TAW
+            #Relative depletion between p and Permanent Wilting Point
+            Drel = (rDr - io.p) / (1 - io.p)
+            #Exponential Curve Shape Factor (Trout & DeJonge p11)
+            sf = 1.5
+            #Exponential Relationship from AquaCrop model (Trout Eq. 7)
+            Ks = 1 - (math.exp(sf*Drel)-1) / (math.exp(sf)-1)
+            io.Ks = sorted([0.0, Ks, 1.0])[1]
 
         #Adjusted crop coefficient (Kcadj) - FAO-56 Eq. 80
         io.Kcadj = io.Ks * io.Kcb + io.Ke
